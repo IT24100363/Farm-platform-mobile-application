@@ -5,14 +5,13 @@ import { getToken } from '../storage/tokenStorage';
 export const API_URLS = {
   localAndroid: 'http://10.0.2.2:5000/api',
   localDevice: 'http://192.168.1.100:5000/api',
-  render: 'https://your-render-service.onrender.com/api',
+  render: 'https://farm-platform-mobile-application.onrender.com/api',
   railway: 'https://your-railway-service.up.railway.app/api'
 };
 
 const configuredUrl =
   process.env.EXPO_PUBLIC_API_URL ||
-  Constants.expoConfig?.extra?.apiUrl ||
-  API_URLS.localDevice;
+  API_URLS.render;
 
 export const API_BASE_URL = configuredUrl.replace(/\/$/, '');
 console.log('API_BASE_URL:', API_BASE_URL);
