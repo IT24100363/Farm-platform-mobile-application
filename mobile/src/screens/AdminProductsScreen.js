@@ -1,19 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Text, TextInput, View } from 'react-native';
 import api, { getApiError } from '../api/api';
+import CategoryDropdown from '../components/CategoryDropdown';
 import EmptyState from '../components/EmptyState';
 import ErrorMessage from '../components/ErrorMessage';
 import { Button, Card, FieldLabel, Screen } from '../components/Screen';
+import { PRODUCT_CATEGORIES } from '../constants/productCategories';
 import { uploadProductImageFromDevice } from '../utils/productImageUpload';
-
-const PRODUCT_CATEGORIES = [
-  'Fresh Vegetables',
-  'Seasonal Fruits',
-  'Dairy & Eggs',
-  'Organic Staples',
-  'Spices',
-  'Processed Foods'
-];
 
 const emptyProduct = {
   productName: '',
@@ -133,8 +126,7 @@ export default function AdminProductsScreen() {
         <Text style={titleStyle}>{editingId ? 'Edit product' : 'Add product'}</Text>
         <FieldLabel>Name</FieldLabel>
         <TextInput onChangeText={(value) => setField('productName', value)} style={inputStyle} value={form.productName} />
-        <FieldLabel>Category</FieldLabel>
-        <TextInput onChangeText={(value) => setField('category', value)} style={inputStyle} value={form.category} />
+        <CategoryDropdown label="Category" onChange={(value) => setField('category', value)} options={PRODUCT_CATEGORIES} value={form.category} />
         <FieldLabel>Description</FieldLabel>
         <TextInput multiline onChangeText={(value) => setField('description', value)} style={inputStyle} value={form.description} />
         <FieldLabel>Price</FieldLabel>

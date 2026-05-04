@@ -6,15 +6,19 @@ const toIdString = (value) => {
   return value.toString();
 };
 
+const normalizePromoCode = (value) => String(value || '').trim().toUpperCase();
+
 export const applyBestPromotion = (product, promotions = [], promoCode = null) => {
   const now = new Date();
   let best = { discountAmount: 0, promotionId: null, discountType: null, discountValue: 0 };
+  const requestedPromoCode = normalizePromoCode(promoCode);
 
   promotions.forEach((promo) => {
     const active = promo.isActive && now >= promo.startDate && now <= promo.endDate;
     if (!active) return;
 
-    const matchesCode = promoCode ? promo.promoCode === promoCode : true;
+    const storedPromoCode = normalizePromoCode(promo.promoCode);
+    const matchesCode = !requestedPromoCode || !storedPromoCode || storedPromoCode === requestedPromoCode;
     const promoCategory = normalizeProductCategory(promo.category);
     const productCategory = normalizeProductCategory(product.category);
     const productId = toIdString(product._id);

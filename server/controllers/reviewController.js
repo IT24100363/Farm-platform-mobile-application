@@ -12,7 +12,7 @@ const toObjectId = (value) => {
   const raw = String(value).trim();
   return mongoose.Types.ObjectId.isValid(raw) ? new mongoose.Types.ObjectId(raw) : null;
 };
-
+//average rating calc
 const recomputeRating = async (productId) => {
   const normalizedProductId = toObjectId(productId);
   if (!normalizedProductId) return;
@@ -31,6 +31,7 @@ const recomputeRating = async (productId) => {
   }
 };
 
+//Crud for feedback and review
 export const addReview = async (req, res, next) => {
   try {
     const { productId, rating, comment } = req.body;

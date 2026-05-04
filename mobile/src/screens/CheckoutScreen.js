@@ -45,10 +45,14 @@ export default function CheckoutScreen({ navigation }) {
   const payloadItems = items.map((item) => ({ productId: item.productId, quantity: item.quantity }));
 
   const loadPreview = async () => {
-    if (!items.length) return;
+    if (!items.length) {
+      setPreview(null);
+      return;
+    }
     setError('');
     try {
-      const { data } = await api.post('/orders/preview', { items: payloadItems, promoCode: promoCode || undefined });
+      const normalizedPromoCode = promoCode.trim().toUpperCase() || undefined;
+      const { data } = await api.post('/orders/preview', { items: payloadItems, promoCode: normalizedPromoCode });
       setPreview(data);
     } catch (err) {
       setError(getApiError(err, 'Could not preview checkout'));
@@ -56,8 +60,12 @@ export default function CheckoutScreen({ navigation }) {
   };
 
   useEffect(() => {
-    loadPreview();
-  }, [items.length]);
+    const timer = setTimeout(() => {
+      loadPreview();
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [items, promoCode]);
 
   useEffect(() => {
     const query = searchQuery.trim();
@@ -157,6 +165,7 @@ export default function CheckoutScreen({ navigation }) {
       };
 
       const trimmedAddress = address.trim();
+      const normalizedPromoCode = promoCode.trim().toUpperCase() || undefined;
       const { data } = await api.post('/orders', {
         items: payloadItems,
         address: trimmedAddress,
@@ -169,7 +178,7 @@ export default function CheckoutScreen({ navigation }) {
               source: selectedLocation.source
             }
           : undefined,
-        promoCode: promoCode || undefined,
+        promoCode: normalizedPromoCode,
         paymentMethod,
         demoPayment: paymentMethod === 'ONLINE' ? demoPayment : undefined
       });

@@ -29,10 +29,12 @@ vi.mock('../models/Product.js', () => ({ default: mocks.Product }));
 vi.mock('../models/Notification.js', () => ({ default: mocks.Notification }));
 
 let addReview;
+let updateReview;
+let deleteReview;
 let replyToReview;
 
 beforeAll(async () => {
-  ({ addReview, replyToReview } = await import('../controllers/reviewController.js'));
+  ({ addReview, updateReview, deleteReview, replyToReview } = await import('../controllers/reviewController.js'));
 });
 
 beforeEach(() => {
@@ -114,6 +116,77 @@ describe('Feedback and Rating Management', () => {
     });
     expect(io.to).toHaveBeenCalledWith(farmerId.toString());
     expect(res.status).toHaveBeenCalledWith(201);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('lets a customer edit their own review and recomputes the rating', async () => {
+    const customerId = createObjectId();
+    const productId = createObjectId();
+    const reviewId = createObjectId();
+
+    mocks.Review.findOneAndUpdate.mockResolvedValue(
+      createMockDoc({
+        _id: reviewId,
+        customerId,
+        productId,
+        rating: 4,
+        comment: 'Updated review'
+      })
+    );
+    mocks.Review.aggregate.mockResolvedValue([{ _id: productId, avg: 4, count: 1 }]);
+    mocks.Product.findByIdAndUpdate.mockResolvedValue(createMockDoc({ _id: productId }));
+
+    const req = {
+      params: { id: reviewId },
+      body: {
+        rating: 4,
+        comment: ' Updated review '
+      },
+      user: { _id: customerId, role: 'customer' }
+    };
+    const res = createMockResponse();
+    const next = vi.fn();
+
+    await updateReview(req, res, next);
+
+    expect(mocks.Review.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: reviewId, customerId },
+      { rating: 4, comment: 'Updated review' },
+      { new: true }
+    );
+    expect(String(mocks.Review.aggregate.mock.calls[0][0][0].$match.productId)).toBe(productId.toString());
+    expect(String(mocks.Product.findByIdAndUpdate.mock.calls[0][0])).toBe(productId.toString());
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ rating: 4, comment: 'Updated review' }));
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('lets a customer delete their own review', async () => {
+    const customerId = createObjectId();
+    const productId = createObjectId();
+    const reviewId = createObjectId();
+
+    mocks.Review.findOneAndDelete.mockResolvedValue(
+      createMockDoc({
+        _id: reviewId,
+        customerId,
+        productId
+      })
+    );
+    mocks.Review.aggregate.mockResolvedValue([]);
+    mocks.Product.findByIdAndUpdate.mockResolvedValue(createMockDoc({ _id: productId }));
+
+    const req = {
+      params: { id: reviewId },
+      user: { _id: customerId, role: 'customer' }
+    };
+    const res = createMockResponse();
+    const next = vi.fn();
+
+    await deleteReview(req, res, next);
+
+    expect(mocks.Review.findOneAndDelete).toHaveBeenCalledWith({ _id: reviewId, customerId });
+    expect(String(mocks.Product.findByIdAndUpdate.mock.calls[0][0])).toBe(productId.toString());
+    expect(res.json).toHaveBeenCalledWith({ message: 'Deleted' });
     expect(next).not.toHaveBeenCalled();
   });
 

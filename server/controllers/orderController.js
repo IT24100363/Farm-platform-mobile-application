@@ -105,6 +105,7 @@ const buildPaymentStatusMessage = (paymentStatus) => {
 };
 
 const roundCurrency = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+const normalizePromoCode = (value) => String(value || '').trim().toUpperCase() || null;
 
 const buildCheckoutTotals = ({ subTotal, discountTotal }) => {
   const itemTotal = Math.max(0, roundCurrency(subTotal - discountTotal));
@@ -202,6 +203,7 @@ const parseEstimatedArrivalAt = (value) => {
 export const previewOrder = async (req, res, next) => {
   try {
     const { items = [], promoCode } = req.body;
+    const normalizedPromoCode = normalizePromoCode(promoCode);
     if (!Array.isArray(items) || !items.length) {
       return res.status(400).json({ message: 'No items to preview' });
     }
@@ -245,7 +247,7 @@ export const previewOrder = async (req, res, next) => {
         return res.status(400).json({ message: 'Cart items must belong to one farmer. Place separate orders for different farmers.' });
       }
 
-      const best = applyBestPromotion(product, promotions, promoCode);
+      const best = applyBestPromotion(product, promotions, normalizedPromoCode);
       const discountPerUnit = Math.min(Number(best.discountAmount || 0), Number(product.price || 0));
       const finalUnitPrice = roundCurrency(Math.max(0, Number(product.price || 0) - discountPerUnit));
       const lineSubTotal = roundCurrency(Number(product.price || 0) * item.quantity);
@@ -337,6 +339,7 @@ export const createOrder = async (req, res, next) => {
   session.startTransaction();
   try {
     const { items = [], paymentMethod = 'COD', promoCode, address, deliveryLocation, demoPayment = {} } = req.body;
+    const normalizedPromoCode = normalizePromoCode(promoCode);
     if (!items.length) return res.status(400).json({ message: 'No items' });
     const isOnlinePayment = paymentMethod === 'ONLINE';
     let demoPaymentMode = null;
@@ -368,7 +371,7 @@ export const createOrder = async (req, res, next) => {
       } else if (farmerOwnerId !== product.farmerId.toString()) {
         throw new Error('Cart items must belong to one farmer. Place separate orders for different farmers.');
       }
-      const best = applyBestPromotion(product, promotions, promoCode);
+      const best = applyBestPromotion(product, promotions, normalizedPromoCode);
       const discountPerUnit = Math.min(Number(best.discountAmount || 0), Number(product.price || 0));
       const finalPrice = roundCurrency(Math.max(0, Number(product.price || 0) - discountPerUnit));
       orderProducts.push({ productId: product._id, quantity: item.quantity, price: finalPrice });
