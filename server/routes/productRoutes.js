@@ -24,7 +24,7 @@ const router = Router();
 
 // list / read must keep specific routes above id route to avoid conflicts
 router.get('/farmer/my', protect, authorizeRoles('farmer'), approvedFarmerOnly, listMyProducts);
-router.post('/upload', protect, authorizeRoles('farmer'), approvedFarmerOnly, upload.single('file'), uploadProductImage);
+router.post('/upload', protect, authorizeRoles('admin', 'farmer'), approvedFarmerOnly, upload.single('file'), uploadProductImage);
 router.get('/admin/all', protect, authorizeRoles('admin'), adminListProducts);
 router.post('/admin', protect, authorizeRoles('admin'), createProduct);
 router.get('/categories', getProductCategories);

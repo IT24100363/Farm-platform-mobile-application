@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Text, TextInput, View } from 'react-native';
 import api, { getApiError } from '../api/api';
 import CategoryDropdown from '../components/CategoryDropdown';
 import EmptyState from '../components/EmptyState';
@@ -50,6 +50,18 @@ export default function AdminProductsScreen() {
   }, []);
 
   const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+
+  const imageUrls = form.images
+    ? form.images.split(',').map((item) => item.trim()).filter(Boolean)
+    : [];
+
+  const farmerOptions = [
+    { label: 'Leave unassigned', value: '' },
+    ...farmers.map((farmer) => ({
+      label: farmer.name || farmer.email || String(farmer._id),
+      value: farmer._id
+    }))
+  ];
 
   const appendImage = (url) => {
     if (!url) return;
@@ -133,11 +145,12 @@ export default function AdminProductsScreen() {
         <TextInput keyboardType="numeric" onChangeText={(value) => setField('price', value)} style={inputStyle} value={form.price} />
         <FieldLabel>Quantity</FieldLabel>
         <TextInput keyboardType="numeric" onChangeText={(value) => setField('quantity', value)} style={inputStyle} value={form.quantity} />
-        <FieldLabel>Farmer</FieldLabel>
-        <TextInput
-          onChangeText={(value) => setField('farmerId', value)}
-          placeholder="Assign farmer ID or leave blank"
-          style={inputStyle}
+        <CategoryDropdown
+          label="Farmer"
+          onChange={(value) => setField('farmerId', value)}
+          options={farmerOptions}
+          placeholder={farmers.length ? 'Select a farmer' : 'No approved farmers available'}
+          sheetTitle="Select farmer"
           value={form.farmerId}
         />
         <FieldLabel>Images</FieldLabel>
@@ -152,6 +165,13 @@ export default function AdminProductsScreen() {
           <Text style={helperStyle}>Or paste one or more image URLs below, separated by commas.</Text>
         </View>
         <TextInput onChangeText={(value) => setField('images', value)} style={inputStyle} value={form.images} />
+        {imageUrls.length ? (
+          <View style={previewRowStyle}>
+            {imageUrls.slice(0, 3).map((uri) => (
+              <Image key={uri} source={{ uri }} style={previewImageStyle} />
+            ))}
+          </View>
+        ) : null}
         <View style={{ gap: 10, marginTop: 12 }}>
           <Button onPress={submit} title={editingId ? 'Update product' : 'Create product'} />
           {editingId ? <Button onPress={resetForm} title="Cancel edit" variant="secondary" /> : null}
@@ -178,3 +198,12 @@ export default function AdminProductsScreen() {
 const inputStyle = { backgroundColor: '#fff', borderColor: '#d9e2dc', borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 12 };
 const titleStyle = { color: '#101828', fontSize: 18, fontWeight: '900' };
 const helperStyle = { color: '#667085', fontSize: 12, marginTop: 8 };
+const previewRowStyle = { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 10 };
+const previewImageStyle = {
+  backgroundColor: '#f2f4f7',
+  borderColor: '#d0d5dd',
+  borderRadius: 10,
+  borderWidth: 1,
+  height: 74,
+  width: 74
+};

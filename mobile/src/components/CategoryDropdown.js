@@ -3,16 +3,34 @@ import { Ionicons } from '@expo/vector-icons';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { colors, radius, spacing } from '../theme';
 
-export default function CategoryDropdown({ label, value, options = [], onChange, placeholder = 'Select category' }) {
+export default function CategoryDropdown({
+  label,
+  value,
+  options = [],
+  onChange,
+  placeholder = 'Select category',
+  sheetTitle
+}) {
   const [open, setOpen] = useState(false);
+
+  const normalizedOptions = useMemo(
+    () =>
+      options.map((option) =>
+        typeof option === 'string'
+          ? { label: option, value: option }
+          : { label: option?.label ?? String(option?.value ?? ''), value: option?.value ?? option?.label ?? '' }
+      ),
+    [options]
+  );
 
   const selectedLabel = useMemo(() => {
     if (!value) return placeholder;
-    return options.includes(value) ? value : value;
-  }, [options, placeholder, value]);
+    const selected = normalizedOptions.find((option) => String(option.value) === String(value));
+    return selected?.label || String(value);
+  }, [normalizedOptions, placeholder, value]);
 
   const choose = (option) => {
-    onChange(option);
+    onChange(option.value);
     setOpen(false);
   };
 
@@ -30,22 +48,22 @@ export default function CategoryDropdown({ label, value, options = [], onChange,
         <TouchableOpacity activeOpacity={1} onPress={() => setOpen(false)} style={styles.backdrop}>
           <View onStartShouldSetResponder={() => true} style={styles.sheet}>
             <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Select category</Text>
+              <Text style={styles.sheetTitle}>{sheetTitle || (label ? `Select ${String(label).toLowerCase()}` : 'Select option')}</Text>
               <TouchableOpacity activeOpacity={0.85} onPress={() => setOpen(false)} style={styles.closeButton}>
                 <Ionicons name="close" size={18} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
             <ScrollView contentContainerStyle={styles.optionList} showsVerticalScrollIndicator={false}>
-              {options.map((option) => {
-                const active = option === value;
+              {normalizedOptions.map((option) => {
+                const active = String(option.value) === String(value);
                 return (
                   <TouchableOpacity
                     activeOpacity={0.85}
-                    key={option}
+                    key={String(option.value)}
                     onPress={() => choose(option)}
                     style={[styles.option, active && styles.optionActive]}
                   >
-                    <Text style={[styles.optionText, active && styles.optionTextActive]}>{option}</Text>
+                    <Text style={[styles.optionText, active && styles.optionTextActive]}>{option.label}</Text>
                     {active ? <Ionicons name="checkmark" size={18} color={colors.primary} /> : null}
                   </TouchableOpacity>
                 );

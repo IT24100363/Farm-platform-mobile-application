@@ -1,6 +1,6 @@
 import multer from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
-import cloudinary from "../config/cloudinary.js";
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import cloudinary from '../config/cloudinary.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -16,7 +16,7 @@ if (hasCloudinaryCreds) {
     }
   });
 } else {
-  // fallback to local disk storage in dev
+  // Fallback to local disk storage for local development.
   const uploadDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
   storage = multer.diskStorage({

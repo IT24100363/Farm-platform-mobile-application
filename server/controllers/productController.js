@@ -27,6 +27,14 @@ const sanitizeText = (value) => {
   return String(value).trim();
 };
 
+const resolvePublicBaseUrl = (req) => {
+  const configured = String(process.env.SERVER_URL || '').trim().replace(/\/$/, '');
+  if (configured) return configured;
+  const host = req?.get?.('host');
+  if (!host) return 'http://localhost:5000';
+  return `${req.protocol}://${host}`.replace(/\/$/, '');
+};
+
 const formatDiscountBadge = (discountType, discountValue) => {
   if (!discountType || !Number.isFinite(Number(discountValue)) || Number(discountValue) <= 0) return null;
   if (discountType === 'percentage') {
@@ -243,7 +251,7 @@ export const uploadProductImage = async (req, res, next) => {
     // cloudinary-storage returns an https URL in path; disk storage returns local path
     const url = raw.startsWith('http')
       ? raw
-      : `${process.env.SERVER_URL || 'http://localhost:5000'}/uploads/${req.file.filename || raw.split(/[/\\\\]/).pop()}`;
+      : `${resolvePublicBaseUrl(req)}/uploads/${req.file.filename || raw.split(/[/\\\\]/).pop()}`;
     res.status(201).json({ url });
   } catch (err) { next(err); }
 };

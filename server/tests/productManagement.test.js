@@ -39,9 +39,10 @@ vi.mock('../config/cloudinary.js', () => ({ default: mocks.cloudinary }));
 
 let createProduct;
 let updateProduct;
+let uploadProductImage;
 
 beforeAll(async () => {
-  ({ createProduct, updateProduct } = await import('../controllers/productController.js'));
+  ({ createProduct, updateProduct, uploadProductImage } = await import('../controllers/productController.js'));
 });
 
 beforeEach(() => {
@@ -139,6 +140,36 @@ describe('Product Management', () => {
     expect(product.save).toHaveBeenCalledTimes(1);
     expect(mocks.handleLowStockAlert).toHaveBeenCalledWith({ product, previousQuantity: 8, app });
     expect(res.json).toHaveBeenCalledWith(product);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('returns a public upload url for device images using the request host', async () => {
+    const req = {
+      file: {
+        filename: 'product-123.jpg',
+        path: 'uploads/product-123.jpg'
+      },
+      protocol: 'http',
+      get: vi.fn((header) => (header === 'host' ? '192.168.1.25:5000' : null))
+    };
+    const res = createMockResponse();
+    const next = vi.fn();
+
+    const previousServerUrl = process.env.SERVER_URL;
+    delete process.env.SERVER_URL;
+
+    try {
+      await uploadProductImage(req, res, next);
+    } finally {
+      if (previousServerUrl === undefined) {
+        delete process.env.SERVER_URL;
+      } else {
+        process.env.SERVER_URL = previousServerUrl;
+      }
+    }
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith({ url: 'http://192.168.1.25:5000/uploads/product-123.jpg' });
     expect(next).not.toHaveBeenCalled();
   });
 });
